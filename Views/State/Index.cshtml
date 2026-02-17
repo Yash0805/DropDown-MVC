@@ -15,23 +15,23 @@
     {
         <table class="table table-striped table-bordered">
             <thead>
-                <tr>
-                    <th style="padding: 8px; color:darkslategray">State Name</th>
-                    <th style="padding: 8px; color:darkslategray">State Code</th>
-                </tr>
+            <tr>
+                <th style="padding: 8px; color:darkslategray">State Name</th>
+                <th style="padding: 8px; color:darkslategray">State Code</th>
+            </tr>
             </thead>
             <tbody>
-                @foreach (var state in Model)
-                {
-                    <tr>
-                        <td style="padding: 8px; color:slateblue">
-                            <b>@state.StateName</b>
-                        </td>
-                        <td style="padding: 8px; color:slateblue">
-                            <b>@state.Code</b>
-                        </td>
-                    </tr>
-                }
+            @foreach (var state in Model)
+            {
+                <tr>
+                    <td style="padding: 8px; color:slateblue">
+                        <b>@state.StateName</b>
+                    </td>
+                    <td style="padding: 8px; color:slateblue">
+                        <b>@state.Code</b>
+                    </td>
+                </tr>
+            }
             </tbody>
         </table>
     }

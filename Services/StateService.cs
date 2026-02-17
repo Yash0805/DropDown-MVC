@@ -2,133 +2,157 @@
 using WebApplication6.data;
 using WebApplication6.Dtos;
 using WebApplication6.Models;
-namespace WebApplication6.Services
+
+namespace WebApplication6.Services;
+
+public sealed class StateService
 {
-    public sealed class StateService
+    private readonly AppDbContext _dbcontext;
+    private readonly ILogger<StateService> _logger;
+
+    public StateService(AppDbContext dbContext, ILogger<StateService> logger)
     {
-        private readonly AppDbContext _dbcontext;
-        private readonly ILogger<StateService> _logger;
+        _dbcontext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _logger = logger;
+    }
 
-        public StateService(AppDbContext dbContext, ILogger<StateService> logger)
-        {
-            _dbcontext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _logger = logger;
-        }
-
-        public IEnumerable<StateViewModel> GetStates()
-        {
-            IReadOnlyList<StateViewModel> states = _dbcontext.State
-                .Select(s => new StateViewModel
-                {
-                    StateID = s.StateID,
-                    StateName = s.StateName,
-                    Code = s.Code
-                }).ToList();
-            return states;
-        }
-        public IEnumerable<StateViewModel> CreateState(StateViewModel model)
-        {
-            State state = new()
+    public IEnumerable<StateViewModel> GetStates()
+    {
+        IReadOnlyList<StateViewModel> states = _dbcontext.State
+            .Select(s => new StateViewModel
             {
-                StateName = model.StateName,
-                Code = model.Code
-            };
+                StateID = s.StateID,
+                StateName = s.StateName,
+                Code = s.Code
+            }).ToList();
+        return states;
+    }
+
+    public IEnumerable<StateViewModel> CreateState(StateViewModel model)
+    {
+        State state = new()
+        {
+            StateName = model.StateName,
+            Code = model.Code
+        };
+        _dbcontext.State.Add(state);
+        _dbcontext.SaveChanges();
+        return GetStates();
+    }
+
+    public IEnumerable<StateDto> GetStateList()
+    {
+        IReadOnlyList<StateDto> state = _dbcontext.State
+            .Select(state => new StateDto(state.StateID, state.StateName, state.Code, state.IsActive)).ToArray();
+        return state;
+    }
+
+    public StateDto? CreateState(CreateStateRequest request)
+    {
+        try
+        {
+            var state = _dbcontext.State.FirstOrDefault(S => S.Code == request.Code);
+            if (state is not null) throw new ConflictException($"State with code {request.Code} already exists.");
+            state = new State { StateName = request.StateName, Code = request.Code };
             _dbcontext.State.Add(state);
             _dbcontext.SaveChanges();
-            return GetStates();
+            return new StateDto(state.StateID, state.StateName, state.Code, state.IsActive);
         }
-
-        public IEnumerable<StateDto> GetStateList()
+        catch (ConflictException ex)
         {
-            IReadOnlyList<StateDto> state = _dbcontext.State
-                .Select(state => new StateDto(state.StateID, state.StateName, state.Code)).ToArray();
-            return state;
+            _logger.LogError(ex, "Error while creating state with name {StateName}.Some conflict occured.",
+                request.StateName);
         }
-        public StateDto? CreateState(CreateStateRequest request)
+        catch (DbUpdateException ex)
         {
-            try
-            {
-                State? state = _dbcontext.State.FirstOrDefault(S => S.Code == request.Code);
-                if (state is not null)
-                {
-                    throw new ConflictException($"State with code {request.Code} already exists.");
-                }
-                state = new State { StateName = request.StateName, Code = request.Code };
-                _dbcontext.State.Add(state);
-                _dbcontext.SaveChanges();
-                return new StateDto(state.StateID, state.StateName, state.Code);
-            }
-            catch (ConflictException ex)
-            {
-                _logger.LogError(ex, "Error while creating state with name {StateName}.Some conflict occured.", request.StateName);
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex,
+            _logger.LogError(ex,
                 "Error while creating a state with name {stateName}. Problem in execution of sql query.",
                 request.StateName);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error While Creating a state with name {state}.", request);
-            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error While Creating a state with name {state}.", request);
+        }
+
+        return null;
+    }
+
+    public StateDto? UpdateState(int StateID, CreateStateRequest request)
+    {
+        try
+        {
+            var state = _dbcontext.State.Find(StateID);
+
+            if (state is null) return null;
+
+            state.StateName = request.StateName;
+            state.Code = request.Code;
+
+            _dbcontext.SaveChanges();
+
+            return new StateDto(state.StateID, state.StateName, state.Code, state.IsActive);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error while updating a state with name {stateName} {code}.", request.StateName,
+                request.Code);
             return null;
         }
-        public StateDto? UpdateState(int StateID, CreateStateRequest request)
+    }
+
+    public StateDto? GetState(int StateID)
+    {
+        var state = _dbcontext.State.Find(StateID);
+        if (state is null) return null;
+        return new StateDto(state.StateID, state.StateName, state.Code, state.IsActive);
+    }
+
+    public StateDto? DeleteState(int StateID)
+    {
+        try
         {
-            try
-            {
-                State? state = _dbcontext.State.Find(StateID);
-
-                if (state is null)
-                {
-                    return null;
-                }
-
-                state.StateName = request.StateName;
-                state.Code = request.Code;
-
-                _dbcontext.SaveChanges();
-
-                return new StateDto(state.StateID, state.StateName, state.Code);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error while updating a state with name {stateName} {code}.", request.StateName,request.Code);
-                return null;
-            }
+            var state = _dbcontext.State.FirstOrDefault(s => s.StateID == StateID);
+            if (state is null) return null;
+            _dbcontext.State.Remove(state);
+            _dbcontext.SaveChanges();
+            return new StateDto(state.StateID, state.StateName, state.Code,state.IsActive);
         }
-        public StateDto? GetState(int StateID)
+        catch (ConflictException ex)
         {
-            State? state = _dbcontext.State.Find(StateID);
-            if (state is null)
-            {
-                return null;
-            }
-            return new StateDto(state.StateID, state.StateName, state.Code);
+            _logger.LogError(ex, "Error while Deleting state with ID {StateID}.Some conflict occured.", StateID);
         }
-        public StateDto? DeleteState(int StateID)
+        catch (Exception e)
         {
-            try
-            {
-                State? state = _dbcontext.State.FirstOrDefault(s => s.StateID == StateID);
-                if(state is null)
-                {
-                    return null;
-                }
-                _dbcontext.State.Remove(state);
-                _dbcontext.SaveChanges();
-                return new StateDto(state.StateID, state.StateName, state.Code);
-            }
-            catch (ConflictException ex)
-            {
-                _logger.LogError(ex, "Error while Deleting state with ID {StateID}.Some conflict occured.", StateID);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error While Creating a state with ID {StateID}.", StateID);
-            }
-            return null;
+            _logger.LogError(e, "Error While Creating a state with ID {StateID}.", StateID);
         }
+
+        return null;
+    }
+    public StateDto? PatchState(int StateID, PatchStateRequest request)
+    {
+        try
+        {
+            var state = _dbcontext.State.Find(StateID);
+            if(state is null)
+                throw new ConflictException($"Cannot find state with ID {StateID} to patch.");
+            _dbcontext.Entry(state).CurrentValues.SetValues(request);
+            _dbcontext.SaveChanges();
+            return new StateDto(state.StateID, state.StateName, state.Code,state.IsActive);
+        }
+        catch (ConflictException ex)
+        {
+            _logger.LogError(ex, "Error while patching state with ID {StateID}.Some conflict occured.", StateID);
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex,
+                "Error while patching a state with ID {StateID}. Problem in execution of sql query.",
+                StateID);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error While patching a state with ID {StateID}.", StateID);
+        }
+        return null;
     }
 }

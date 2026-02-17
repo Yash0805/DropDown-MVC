@@ -1,17 +1,16 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WebApplication6.data
+namespace WebApplication6.data;
+
+public sealed class City
 {
-    public sealed class City
-    {
-        [Key] public int CityID { get; set; }
-        [Required]
-        public required string CityName { get; set; }
+    [Key] public int CityID { get; set; }
 
-        [ForeignKey("State")]
-        public int StateID { get; set; }
+    [Required] public required string CityName { get; set; }
 
-        public State? State { get; set; }
-    }
+    [ForeignKey("State")] public int StateID { get; set; }
+
+    public State? State { get; set; }
+    public bool IsActive { get; set; }
 }

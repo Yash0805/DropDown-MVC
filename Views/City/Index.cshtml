@@ -6,17 +6,19 @@
     <h1 style="color:brown">List of Cities</h1>
     <Table class="table table-striped table-bordered">
         <thead>
-            <tr>
-                <th style="padding: 8px; color:darkslategray">City Name</th>
-            </tr>
+        <tr>
+            <th style="padding: 8px; color:darkslategray">City Name</th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var name in Model)
-            {
-                <tr>
-                    <td style="padding: 8px; color:slateblue"><b>@name.CityName</b></td>
-                </tr>
-            }
+        @foreach (var name in Model)
+        {
+            <tr>
+                <td style="padding: 8px; color:slateblue">
+                    <b>@name.CityName</b>
+                </td>
+            </tr>
+        }
         </tbody>
     </Table>
 </div>
