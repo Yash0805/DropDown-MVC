@@ -1,0 +1,26 @@
+﻿@model StateViewModel
+<form asp-controller="State" asp-action="Create" method="post">
+    @Html.ValidationSummary()
+    <div class="mb-3 row">
+        @* <label class="col-sm-2 col-form-label" for="inputName">Name</label> *@
+        @Html.LabelFor(m => m.StateName, new { @class = "col-sm-2 col-form-label" })
+        <div class="col-sm-10">
+            @Html.TextBoxFor(m => m.StateName, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.StateName, null,
+            new { @class = "text-danger" })
+        </div>
+    </div>
+    <div class="mb-3 row">
+        @* <label for="inputCode" class="col-sm-2 col-form-label">Code</label> *@
+        @Html.LabelFor(m => m.Code, new { @class = "col-sm-2 col-form-label" })
+        <div class="col-sm-10">
+            @Html.TextBoxFor(m => m.Code,
+                        new { @class = "form-control", maxlength = "2" })
+            @Html.ValidationMessageFor(m => m.Code, null,
+                        new { @class = "text-danger" })
+        </div>
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</form>

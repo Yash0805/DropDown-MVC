@@ -1,0 +1,13 @@
+﻿@model IReadOnlyList<StateViewModel>
+<div>
+    <a>Create</a>
+    <table class="table table-bordered table-striped table-hover">
+        @foreach (var model in Model)
+        {
+            <tr>
+                <td>@(model.StateName)</td>
+                <td>@(model.Code)</td>
+            </tr>
+        }
+    </table>
+</div>
